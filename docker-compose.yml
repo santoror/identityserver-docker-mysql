@@ -1,0 +1,69 @@
+version: '3.4'
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ${PROXY_CONF}:/etc/nginx/proxy.conf
+
+  identityserver.local:
+    image: ${DOCKER_REGISTRY-}identityserver.local
+    build:
+      context: .
+      dockerfile: src/IdentityServer/Dockerfile
+#    volumes:
+#      - ${CERTIFICATE_PATH}:/root/.dotnet/https
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      ConnectionStrings__DefaultConnection: ${ASPNETCORE_CONNECTION_STRING}
+      VIRTUAL_HOST: ${IDENTITY_VIRTUAL_HOST}
+#      ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+#      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_KESTREL_CERTIFICATE_PASSWORD}
+#      ASPNETCORE_Kestrel__Certificates__Default__Path: ${ASPNETCORE_KESTREL_CERTIFICATE_PATH}
+#      Certificate__Path: ${ASPNETCORE_KESTREL_CERTIFICATE_PATH}
+#      Certificate__Password: ${ASPNETCORE_KESTREL_CERTIFICATE_PASSWORD}
+    depends_on:
+      - mysql-db
+
+  api.local:
+    image: ${DOCKER_REGISTRY-}api.local
+    build:
+      context: .
+      dockerfile: src/Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      VIRTUAL_HOST: ${API_VIRTUAL_HOST}
+#      ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+#      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_KESTREL_CERTIFICATE_PASSWORD}
+#      ASPNETCORE_Kestrel__Certificates__Default__Path: ${ASPNETCORE_KESTREL_CERTIFICATE_PATH}
+#    volumes:
+#      - ${CERTIFICATE_PATH}:/root/.dotnet/https
+    depends_on:
+      - identityserver.local
+
+
+  mvc.local:
+    image: ${DOCKER_REGISTRY-}mvc.local
+    build:
+      context: .
+      dockerfile: src/MvcClient/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT}
+      VIRTUAL_HOST: ${MVC_VIRTUAL_HOST}
+#      ASPNETCORE_URLS: ${ASPNETCORE_URLS}
+#      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_KESTREL_CERTIFICATE_PASSWORD}
+#      ASPNETCORE_Kestrel__Certificates__Default__Path: ${ASPNETCORE_KESTREL_CERTIFICATE_PATH}
+#    volumes:
+#      - ${CERTIFICATE_PATH}:/root/.dotnet/https
+    depends_on:
+      - identityserver.local
+
+
+  mysql-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    command: ['mysqld', '--character-set-server=latin1', '--default-authentication-plugin=mysql_native_password']

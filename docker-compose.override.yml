@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  identityserver.local:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  api.local:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+
+  mvc.local:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
